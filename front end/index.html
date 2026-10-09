@@ -1,13 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Issue Management</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KSR Campus Issue Management</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      color: #1e293b;
+    }
+
+    header {
+      background: #123a72;
+      color: white;
+      text-align: center;
+      padding: 25px 15px;
+    }
+
+    header h1 {
+      margin: 0 0 10px;
+    }
+
+    header p {
+      margin: 0;
+      color: #e2e8f0;
+    }
+
+    main {
+      max-width: 700px;
+      margin: 25px auto;
+      padding: 0 15px;
+    }
+
+    .card {
+      background: white;
+      padding: 22px;
+      margin-bottom: 22px;
+      border-radius: 12px;
+      box-shadow: 0 3px 12px #00000012;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #123a72;
+    }
+
+    label {
+      display: block;
+      margin-top: 14px;
+      font-weight: bold;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 7px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 16px;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    button {
+      background: #1769d2;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      margin-top: 18px;
+      border-radius: 7px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0e4fa8;
+    }
+
+    .issue {
+      border: 1px solid #dbe3ee;
+      padding: 15px;
+      margin-top: 12px;
+      border-radius: 8px;
+      overflow-wrap: anywhere;
+    }
+
+    .status {
+      color: #9a6700;
+      font-weight: bold;
+    }
+
+    .empty {
+      color: #64748b;
+    }
+  </style>
 </head>
+
 <body>
-    <h1>Campus Issue Management System</h1>
+  <header>
+    <h1>KSR Campus Issue Management</h1>
     <p>Report and track campus problems easily.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Report a Campus Issue</h2>
+
+      <form id="issueForm">
+        <label for="title">Issue Title</label>
+        <input id="title" required
+          placeholder="e.g. Water shortage">
+
+        <label for="category">Issue Category</label>
+        <select id="category" required>
+          <option value="">Select category</option>
+          <option>Water</option>
+          <option>Electricity</option>
+          <option>Classroom</option>
+          <option>Hostel</option>
+          <option>Cleanliness</option>
+          <option>Internet</option>
+          <option>Other</option>
+        </select>
+
+        <label for="location">Location</label>
+        <input id="location" required
+          placeholder="e.g. Block A, Room 101">
+
+        <label for="description">Description</label>
+        <textarea id="description" required
+          placeholder="Explain the problem..."></textarea>
+
+        <button type="submit">Submit Issue</button>
+      </form>
+
+      <p id="message" role="status"></p>
+    </section>
+
+    <section class="card">
+      <h2>Reported Issues</h2>
+      <div id="issueList">
+        <p class="empty">No issues reported yet.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("issueForm");
+    const issueList = document.getElementById("issueList");
+    const message = document.getElementById("message");
+
+    let issues = [];
+
+    try {
+      issues = JSON.parse(
+        localStorage.getItem("ksrCampusIssues") || "[]"
+      );
+
+      if (!Array.isArray(issues)) issues = [];
+    } catch {
+      issues = [];
+    }
+
+    function showIssues() {
+      issueList.replaceChildren();
+
+      if (issues.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty";
+        empty.textContent = "No issues reported yet.";
+        issueList.appendChild(empty);
+        return;
+      }
+
+      issues.forEach(function(issue) {
+        const card = document.createElement("div");
+        card.className = "issue";
+
+        const heading = document.createElement("h3");
+        heading.textContent = issue.title;
+
+        const category = document.createElement("p");
+        category.textContent = "Category: " + issue.category;
+
+        const location = document.createElement("p");
+        location.textContent = "Location: " + issue.location;
+
+        const description = document.createElement("p");
+        description.textContent = issue.description;
+
+        const status = document.createElement("p");
+        status.className = "status";
+        status.textContent = "Status: " + issue.status;
+
+        card.append(
+          heading, category, location, description, status
+        );
+
+        issueList.appendChild(card);
+      });
+    }
+
+    form.addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const issue = {
+        title: document.getElementById("title").value.trim(),
+        category: document.getElementById("category").value,
+        location: document.getElementById("location").value.trim(),
+        description: document.getElementById("description").value.trim(),
+        status: "Pending"
+      };
+
+      if (
+        !issue.title ||
+        !issue.category ||
+        !issue.location ||
+        !issue.description
+      ) {
+        message.textContent = "Please fill in all fields.";
+        return;
+      }
+
+      issues.unshift(issue);
+
+      try {
+        localStorage.setItem(
+          "ksrCampusIssues",
+          JSON.stringify(issues)
+        );
+      } catch {
+        issues.shift();
+        message.textContent =
+          "Unable to save. Please check browser storage.";
+        return;
+      }
+
+      showIssues();
+      form.reset();
+      message.textContent = "Issue submitted successfully!";
+    });
+
+    showIssues();
+  </script>
 </body>
 </html>
